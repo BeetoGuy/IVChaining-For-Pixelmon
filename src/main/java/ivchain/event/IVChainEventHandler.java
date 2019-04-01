@@ -1,13 +1,19 @@
 package ivchain.event;
 
 import com.google.common.collect.Lists;
+import com.pixelmonmod.pixelmon.api.events.BattleStartedEvent;
 import com.pixelmonmod.pixelmon.api.events.BeatWildPixelmonEvent;
 import com.pixelmonmod.pixelmon.api.events.CaptureEvent;
+import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
+import com.pixelmonmod.pixelmon.battles.controller.participants.PixelmonWrapper;
+import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.WildPixelmonParticipant;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
+import com.pixelmonmod.pixelmon.worldGeneration.dimension.ultraspace.UltraSpace;
 import ivchain.IVChain;
+import ivchain.IVConfig;
 import ivchain.capability.CapabilityChainTracker;
 import ivchain.capability.IChainTracker;
 import ivchain.util.ChainingHandler;
@@ -66,6 +72,22 @@ public class IVChainEventHandler {
 
     public static class PixelHandler {
         @SubscribeEvent
+        public void onPixelmonEncountered(BattleStartedEvent evt) {
+            if (!IVConfig.chainHA) return;
+            //Ensure that this is a PLAYER-WILD BATTLE
+            if (evt.bc.containsParticipantType(WildPixelmonParticipant.class) && evt.bc.containsParticipantType(PlayerParticipant.class)) {
+                BattleParticipant wild = evt.participant1[0] instanceof WildPixelmonParticipant ? evt.participant1[0] : evt.participant2[0];
+                EntityPlayerMP player = evt.bc.getPlayers().get(0).player;
+                PixelmonWrapper pixel = wild.controlledPokemon.get(0);
+                String name = pixel.getNickname();
+                if (getPlayer(player).getChainName().matches(name)) {
+                    if (pixel.pokemon.getAbilitySlot() != 2 && canHiddenAbility(player))
+                    wild.controlledPokemon.get(0).pokemon.setAbilitySlot(2);
+                }
+            }
+        }
+
+        @SubscribeEvent
         public void onPixelmonDefeat(BeatWildPixelmonEvent evt) {
             WildPixelmonParticipant pixelmon = evt.wpp;
             String name = pixelmon.getDisplayName();
@@ -84,14 +106,27 @@ public class IVChainEventHandler {
                 int guaranteedIVs = chain > 29 ? 4 : chain > 19 ? 3 : chain > 9 ? 2 : chain > 4 ? 1 : 0;
                 if (guaranteedIVs > 0) {
                     List<StatsType> types = Lists.newArrayList(StatsType.HP, StatsType.Attack, StatsType.Defence, StatsType.SpecialAttack, StatsType.SpecialDefence, StatsType.Speed);
-                    for (int i = 0; i < guaranteedIVs; i++) {
-                        int place = IVChain.instance.rand.nextInt(types.size());
+                    if (IVConfig.easyMode) { //If we want to skip already-perfect IVs, then we remove them from the list.
+                        for (StatsType type : types) {
+                            if (pixelmon.getPixelmonWrapper().getStats().ivs.get(type) == IVStore.MAX_IVS) {
+                                types.remove(type);
+                            }
+                        }
+                    }
+                    for (int i = 0; i < guaranteedIVs && !types.isEmpty(); i++) {
+                        int place = types.size() == 1 ? 0 : IVChain.instance.rand.nextInt(types.size());
                         pixelmon.getPixelmonWrapper().getStats().ivs.set(types.get(place), IVStore.MAX_IVS);
                         types.remove(place);
                     }
                     evt.setPokemon(pixelmon);
                 }
             }
+        }
+
+        private boolean canHiddenAbility(EntityPlayerMP player) {
+            byte chain = getPlayer(player).getChainValue();
+            int chance = chain < 10 ? 0 : chain < 20 ? 5 : chain < 30 ? 10 : 15;
+            return chance > 0 && IVChain.instance.rand.nextInt(isUltraSpace(player) ? 50 : 100) < chance;
         }
 
         private void advanceChain(EntityPlayerMP player, String pixelmonName) {
@@ -107,6 +142,10 @@ public class IVChainEventHandler {
 
         private IChainTracker getPlayer(EntityPlayerMP player) {
             return player.getCapability(CapabilityChainTracker.CHAIN_TRACKER, EnumFacing.UP);
+        }
+
+        private boolean isUltraSpace(EntityPlayerMP player) {
+            return player.dimension == UltraSpace.DIM_ID;
         }
     }
 }

@@ -23,7 +23,7 @@ public class ChainingPlayer implements IChainTracker {
     public void incrementChainValue(boolean reset) {
         if (reset)
             chainValue = 1;
-        else if (chainValue < 30)
+        else if (chainValue < 127)
             chainValue++;
     }
 
