@@ -71,6 +71,8 @@ public class IVChainEventHandler {
     }
 
     public static class PixelHandler {
+        private static final StatsType[] STATS_TYPES = {StatsType.HP, StatsType.Attack, StatsType.Defence, StatsType.SpecialAttack, StatsType.SpecialDefence, StatsType.Speed};
+
         @SubscribeEvent
         public void onPixelmonEncountered(BattleStartedEvent evt) {
             if (!IVConfig.chainHA) return;
@@ -105,14 +107,15 @@ public class IVChainEventHandler {
                 byte chain = getPlayer(player).getChainValue();
                 int guaranteedIVs = chain > 29 ? 4 : chain > 19 ? 3 : chain > 9 ? 2 : chain > 4 ? 1 : 0;
                 if (guaranteedIVs > 0) {
-                    List<StatsType> types = Lists.newArrayList(StatsType.HP, StatsType.Attack, StatsType.Defence, StatsType.SpecialAttack, StatsType.SpecialDefence, StatsType.Speed);
-                    if (IVConfig.easyMode) { //If we want to skip already-perfect IVs, then we remove them from the list.
-                        for (StatsType type : types) {
-                            if (pixelmon.getPixelmonWrapper().getStats().ivs.get(type) == IVStore.MAX_IVS) {
-                                types.remove(type);
-                            }
-                        }
-                    }
+                    List<StatsType> types = Lists.newArrayList();
+
+                    for (StatsType type : STATS_TYPES) {
+                        //If we want to skip already-perfect IVs, then we just don't add them to the list.
+                        if (IVConfig.easyMode && pixelmon.getPixelmonWrapper().getStats().ivs.get(type) == IVStore.MAX_IVS)
+                            continue;
+                        types.add(type);
+                    } //If all the IVs are perfect, then this isn't worth going through.
+                    if (types.isEmpty()) return;
                     for (int i = 0; i < guaranteedIVs && !types.isEmpty(); i++) {
                         int place = types.size() == 1 ? 0 : IVChain.instance.rand.nextInt(types.size());
                         pixelmon.getPixelmonWrapper().getStats().ivs.set(types.get(place), IVStore.MAX_IVS);
