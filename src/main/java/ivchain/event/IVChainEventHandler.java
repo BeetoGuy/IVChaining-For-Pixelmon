@@ -81,7 +81,7 @@ public class IVChainEventHandler {
                 BattleParticipant wild = evt.participant1[0] instanceof WildPixelmonParticipant ? evt.participant1[0] : evt.participant2[0];
                 EntityPlayerMP player = evt.bc.getPlayers().get(0).player;
                 PixelmonWrapper pixel = wild.controlledPokemon.get(0);
-                String name = pixel.getNickname();
+                String name = pixel.getPokemonName();
                 if (getPlayer(player).getChainName().matches(name)) {
                     if (pixel.pokemon.getAbilitySlot() != 2 && canHiddenAbility(player))
                     wild.controlledPokemon.get(0).pokemon.setAbilitySlot(2);
@@ -92,7 +92,7 @@ public class IVChainEventHandler {
         @SubscribeEvent
         public void onPixelmonDefeat(BeatWildPixelmonEvent evt) {
             WildPixelmonParticipant pixelmon = evt.wpp;
-            String name = pixelmon.getDisplayName();
+            String name = pixelmon.controlledPokemon.get(0).getPokemonName();
             EntityPlayerMP player = evt.player;
             advanceChain(player, name);
         }
@@ -100,7 +100,7 @@ public class IVChainEventHandler {
         @SubscribeEvent
         public void onPixelmonCatch(CaptureEvent.SuccessfulCapture evt) {
             EntityPixelmon pixelmon = evt.getPokemon();
-            String name = pixelmon.getPixelmonWrapper().getNickname();
+            String name = pixelmon.getPokemonName();
             EntityPlayerMP player = evt.player;
             advanceChain(player, name);
             if (getPlayer(player) != null) {
@@ -111,14 +111,14 @@ public class IVChainEventHandler {
 
                     for (StatsType type : STATS_TYPES) {
                         //If we want to skip already-perfect IVs, then we just don't add them to the list.
-                        if (IVConfig.easyMode && pixelmon.getPixelmonWrapper().getStats().ivs.get(type) == IVStore.MAX_IVS)
+                        if (IVConfig.easyMode && pixelmon.getPokemonData().getStats().ivs.get(type) == IVStore.MAX_IVS)
                             continue;
                         types.add(type);
                     } //If all the IVs are perfect, then this isn't worth going through.
                     if (types.isEmpty()) return;
                     for (int i = 0; i < guaranteedIVs && !types.isEmpty(); i++) {
                         int place = types.size() == 1 ? 0 : IVChain.instance.rand.nextInt(types.size());
-                        pixelmon.getPixelmonWrapper().getStats().ivs.set(types.get(place), IVStore.MAX_IVS);
+                        pixelmon.getPokemonData().getStats().ivs.set(types.get(place), IVStore.MAX_IVS);
                         types.remove(place);
                     }
                     evt.setPokemon(pixelmon);
