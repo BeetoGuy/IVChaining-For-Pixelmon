@@ -1,13 +1,16 @@
 package ivchain.event;
 
 import com.google.common.collect.Lists;
+import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.events.BattleStartedEvent;
 import com.pixelmonmod.pixelmon.api.events.BeatWildPixelmonEvent;
 import com.pixelmonmod.pixelmon.api.events.CaptureEvent;
+import com.pixelmonmod.pixelmon.api.events.PixelmonBlockStartingBattleEvent;
 import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.PixelmonWrapper;
 import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.WildPixelmonParticipant;
+import com.pixelmonmod.pixelmon.config.PixelmonConfig;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
@@ -21,6 +24,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -72,6 +76,21 @@ public class IVChainEventHandler {
 
     public static class PixelHandler {
         private static final StatsType[] STATS_TYPES = {StatsType.HP, StatsType.Attack, StatsType.Defence, StatsType.SpecialAttack, StatsType.SpecialDefence, StatsType.Speed};
+
+        @SubscribeEvent
+        public void onGrassEncounter(PixelmonBlockStartingBattleEvent evt) {
+            if (!IVConfig.grassEncounterShinyIncrease) return;
+            if (evt.wildPixelmon1 != null) {
+                if (doShinyCheck(evt.wildPixelmon1, evt.player, evt.worldIn)) {
+                    evt.wildPixelmon1.getPokemonData().setShiny(true);
+                }
+            }
+            if (evt.wildPixelmon2 != null) {
+                if (doShinyCheck(evt.wildPixelmon2, evt.player, evt.worldIn)) {
+                    evt.wildPixelmon2.getPokemonData().setShiny(true);
+                }
+            }
+        }
 
         @SubscribeEvent
         public void onPixelmonEncountered(BattleStartedEvent evt) {
@@ -126,10 +145,33 @@ public class IVChainEventHandler {
             }
         }
 
+        private boolean doShinyCheck(EntityPixelmon pixelmon, EntityPlayerMP player, World world) {
+            String name = pixelmon.getPokemonName();
+            if (player != null && getPlayer(player).getChainName().equals(name)) {
+                if (canGetShiny(player, world)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean canGetShiny(EntityPlayerMP player, World world) {
+            byte chain = getPlayer(player).getChainValue();
+            int chance = chain <= 10 ? 0 : chain <= 20 ? 5 : chain <= 30 ? 9 : 13;
+            if (chance > 0) {
+                if (Pixelmon.storageManager.getParty(player).getShinyCharm().isActive())
+                    chance *= 3;
+                int shinyChance = Math.round(PixelmonConfig.getShinyRate(world.provider.getDimension()));
+                if (shinyChance > 0)
+                    return IVChain.instance.rand.nextInt(shinyChance) <= chance;
+            }
+            return false;
+        }
+
         private boolean canHiddenAbility(EntityPlayerMP player) {
             byte chain = getPlayer(player).getChainValue();
             int chance = chain < 10 ? 0 : chain < 20 ? 5 : chain < 30 ? 10 : 15;
-            return chance > 0 && IVChain.instance.rand.nextInt(isUltraSpace(player) ? 50 : 100) < chance;
+            return chance > 0 && IVChain.instance.rand.nextInt(isUltraSpace(player) && PixelmonConfig.ultraSpaceHiddenAbilityModifier > 0.0F ? Math.max(Math.round(100 / PixelmonConfig.ultraSpaceHiddenAbilityModifier), 10) : 100) < chance;
         }
 
         private void advanceChain(EntityPlayerMP player, String pixelmonName) {
