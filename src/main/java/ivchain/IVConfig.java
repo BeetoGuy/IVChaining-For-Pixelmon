@@ -9,12 +9,16 @@ public class IVConfig {
     public static boolean easyMode = false;
     public static boolean chainHA = true;
     public static boolean grassEncounterShinyIncrease = true;
+    public static boolean legendaryIVs = false;
+    public static boolean dexNav = true;
 
     public static void init(File file) {
         config = new Configuration(file);
         easyMode = config.getBoolean("EasyMode", "General", easyMode, "If enabled, the chaining handler skips IVs that were already rolled to be perfect.");
         chainHA = config.getBoolean("ChainHA", "General", chainHA, "If enabled, IV chaining will increase chances of a Pokemon having its Hidden Ability.");
         grassEncounterShinyIncrease = config.getBoolean("GrassShinyIncrase", "General", grassEncounterShinyIncrease, "If enabled, encounters from tall grass have a higher shiny chance if Pokemon is part of chain.");
+        legendaryIVs = config.getBoolean("LegendaryIVChaining", "General", legendaryIVs, "If enabled, legendaries generate extra perfect IVs if chained. (WARNING: Will take a long time to chain up)");
+        dexNav = config.getBoolean("DexNav", "General", dexNav, "If enabled, allows for DexNav functionality");
         if (config.hasChanged())
             config.save();
     }

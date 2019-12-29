@@ -53,5 +53,28 @@ public class CapabilityChainTracker {
         public void setChainValue(byte value) {
             chainValue = (byte)Math.max(0, value);
         }
+
+        @Override
+        public boolean isDirty() {
+            return false;
+        }
+
+        @Override
+        public void incrementEncounterValue(short value) {
+
+        }
+
+        @Override
+        public short getEncounterValue(short value) {
+            return 0;
+        }
+
+        @Override
+        public NBTTagCompound getPokedexMap() {
+            return new NBTTagCompound();
+        }
+
+        @Override
+        public void readPokedexMap(NBTTagCompound tag) {}
     }
 }
