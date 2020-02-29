@@ -16,7 +16,6 @@ public interface IChainTracker {
     default NBTTagCompound writeNBTValue(NBTTagCompound tag) {
         tag.setString("ChainName", getChainName());
         tag.setByte("ChainValue", getChainValue());
-        //tag.setTag("Pokedex", getPokedexMap());
         return tag;
     }
 
@@ -24,18 +23,6 @@ public interface IChainTracker {
         if (tag.hasKey("ChainName"))
             setChainName(tag.getString("ChainName"));
         if (tag.hasKey("ChainValue"))
-            setChainValue(tag.getByte("ChainValue"));/*
-        if (tag.hasKey("Pokedex"))
-            readPokedexMap(tag.getCompoundTag("Pokedex"));*/
+            setChainValue(tag.getByte("ChainValue"));
     }
-
-    void incrementEncounterValue(short natDex);
-
-    short getEncounterValue(short natDex);
-
-    NBTTagCompound getPokedexMap();
-
-    void readPokedexMap(NBTTagCompound tag);
-
-    boolean isDirty();
 }
