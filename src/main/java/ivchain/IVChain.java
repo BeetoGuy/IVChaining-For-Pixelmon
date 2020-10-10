@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import java.util.Random;
 
-@Mod(modid = "ivchain", name = "IV Chaining", version = "1.2.2", dependencies = "required-after:pixelmon@[7.2.0,)", acceptableRemoteVersions = "*")
+@Mod(modid = "ivchain", name = "IV Chaining", version = "1.2.2", acceptableRemoteVersions="*", dependencies = "required-after:pixelmon@[7.2.0,)", acceptableRemoteVersions = "*")
 public class IVChain {
     @Mod.Instance(value = "ivchain")
     public static IVChain instance;
