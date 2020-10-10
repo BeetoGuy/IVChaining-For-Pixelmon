@@ -205,7 +205,7 @@ public class IVChainEventHandler {
             byte chain = getPlayer(player).getChainValue();
             int chance = chain <= 10 ? 0 : chain <= 20 ? 5 : chain <= 30 ? 9 : 13;
             if (chance > 0) {
-                if (Pixelmon.storageManager.getParty(player).getShinyCharmState().isActive())
+                if (Pixelmon.storageManager.getParty(player).getShinyCharm().isActive())
                     chance *= 3;
                 int shinyChance = Math.round(PixelmonConfig.getShinyRate(world.provider.getDimension()));
                 if (shinyChance > 0)
